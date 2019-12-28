@@ -15,7 +15,7 @@ use List::Compare;
 use List::MoreUtils qw(none uniq firstval);
 use Scalar::Util qw(weaken);
 
-our $VERSION = '1.37';
+our $VERSION = '1.40';
 
 my %translation = (
 	2  => 'Polizeiliche Ermittlung',
@@ -118,7 +118,7 @@ Travel::Status::DE::IRIS::Result->mk_ro_accessors(
 	  sched_route_end start
 	  station station_uic
 	  stop_no time train_id train_no transfer type
-	  unknown_t unknown_o wing_id)
+	  unknown_t unknown_o wing_id wing_of)
 );
 
 sub is_additional {
@@ -400,8 +400,12 @@ sub set_unscheduled {
 sub add_arrival_wingref {
 	my ( $self, $ref ) = @_;
 
-	$ref->{is_wing} = 1;
+	my $backref = $self;
+
 	weaken($ref);
+	weaken($backref);
+	$ref->{is_wing} = 1;
+	$ref->{wing_of} = $self;
 	push( @{ $self->{arrival_wings} }, $ref );
 	return $self;
 }
@@ -409,8 +413,12 @@ sub add_arrival_wingref {
 sub add_departure_wingref {
 	my ( $self, $ref ) = @_;
 
-	$ref->{is_wing} = 1;
+	my $backref = $self;
+
 	weaken($ref);
+	weaken($backref);
+	$ref->{is_wing} = 1;
+	$ref->{wing_of} = $self;
 	push( @{ $self->{departure_wings} }, $ref );
 	return $self;
 }
@@ -820,7 +828,7 @@ arrival/departure received by Travel::Status::DE::IRIS
 
 =head1 VERSION
 
-version 1.37
+version 1.40
 
 =head1 DESCRIPTION
 
@@ -1013,7 +1021,7 @@ see also B<is_transfer>.
 =item $result->old_train_no
 
 Number of the pre-tarnsfer train, unique per day. E.g. C<< 2225 >> for
-C<< IC 2225 >>. See also B<is_transfer>. Only defined if a transfer took
+C<< IC 2225 >>. Only defined if a transfer took
 place, see also B<is_transfer>.
 
 =item $result->origin
